@@ -14,14 +14,6 @@ import routes from './routes/routes';
 const port: number = parseInt(config.get('port'));
 const host: string = config.get('host');
 
-
-
-
-
-
-
-
-
 // start express app
 const app = express();
 app.use(cors());
