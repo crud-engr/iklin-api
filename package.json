@@ -1,0 +1,62 @@
+{
+    "name": "iklin-api",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.ts",
+    "scripts": {
+        "start": "node app.ts",
+        "dev": "nodemon --config nodemon.json src/app.ts",
+        "format": "prettier --ignore-path .gitignore --write \"**/*.{ts,css,scss}\"",
+        "prepare": "husky install"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/crud-engr/iklin-api.git"
+    },
+    "author": "Abeeb Ayinla",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/crud-engr/iklin-api/issues"
+    },
+    "homepage": "https://github.com/crud-engr/iklin-api#readme",
+    "devDependencies": {
+        "@types/bcrypt": "^5.0.0",
+        "@types/config": "^3.3.0",
+        "@types/cors": "^2.8.12",
+        "@types/express": "^4.17.14",
+        "@types/jsonwebtoken": "^8.5.9",
+        "@types/lodash": "^4.14.185",
+        "@types/mongoose": "^5.11.97",
+        "@types/node": "^18.7.21",
+        "@types/yup": "^0.32.0",
+        "dayjs": "^1.11.5",
+        "dotenv": "^16.0.2",
+        "pino": "^8.6.0",
+        "pino-pretty": "^9.1.0",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.8.3",
+        "husky": "^8.0.0"
+    },
+    "dependencies": {
+        "@types/compression": "^1.7.2",
+        "@types/express-mongo-sanitize": "^2.1.0",
+        "@types/express-rate-limit": "^6.0.0",
+        "@types/helmet": "^4.0.0",
+        "@types/morgan": "^1.9.3",
+        "bcrypt": "^5.0.1",
+        "compression": "^1.7.4",
+        "config": "^3.3.8",
+        "cors": "^2.8.5",
+        "express": "^4.18.1",
+        "express-mongo-sanitize": "^2.2.0",
+        "express-rate-limit": "^6.6.0",
+        "helmet": "^6.0.0",
+        "jsonwebtoken": "^8.5.1",
+        "lodash": "^4.17.21",
+        "moment": "^2.29.4",
+        "mongoose": "^6.6.1",
+        "morgan": "^1.10.0",
+        "prettier": "^2.7.1",
+        "yup": "^0.32.11"
+    }
+}
