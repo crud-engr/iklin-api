@@ -1,0 +1,21 @@
+extends baseEmail
+
+block content
+    tr
+        td.wrapper(style='font-family: sans-serif; font-size: 14px; vertical-align: top; box-sizing: border-box; padding: 20px;')
+            table(role='presentation' border='0' cellpadding='0' cellspacing='0' style='border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;')
+                tr
+                    td(style='font-family: sans-serif; font-size: 14px; vertical-align: top;')
+                        p(style='font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;') Hi #{firstName},
+                        p(style='font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;') Welcome to Iklin. We are happy to have you onbaord. Let's connect you with various customers for brand visibility and make revenue.
+                        table.btn.btn-primary(role='presentation' border='0' cellpadding='0' cellspacing='0' style='border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%; box-sizing: border-box;')
+                            tbody
+                                tr
+                                    td(align='left' style='font-family: sans-serif; font-size: 14px; vertical-align: top; padding-bottom: 15px;')
+                                        table(role='presentation' border='0' cellpadding='0' cellspacing='0' style='border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;')
+                                            tbody
+                                                tr
+                                                    td(style='font-family: sans-serif; font-size: 14px; vertical-align: top; background-color: #0075FF; border-radius: 5px; text-align: center;')
+                                                        p(style='display: inline-block; color: #ffffff; background-color: #0075FF; border: solid 1px #0075FF; border-radius: 5px; box-sizing: border-box; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 25px; text-transform: capitalize; border-color: #0075FF;') #{otp}
+                        p(style='font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; Margin-bottom: 15px;') Kindly contact support@iklin.app for further information
+                        

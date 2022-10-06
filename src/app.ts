@@ -11,8 +11,8 @@ import log from './logger';
 import connect from './db/connect';
 import routes from './routes/routes';
 
-const port: number = parseInt(config.get('port'));
-const host: string = config.get('host');
+const port: number = parseInt(config.get('PORT'));
+const host: string = config.get('HOST');
 
 // start express app
 const app = express();
