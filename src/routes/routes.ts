@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import IndexRoute from './index.routes';
 import HealthcheckRoute from './health.routes';
-// import UserRoute from './user/user.routes';
+import UserAuthRoute from './user/auth.routes';
 // import RoleRoute from './role.routes';
 
 export default function (app: Express) {
@@ -20,5 +20,5 @@ export default function (app: Express) {
     // app.use('/api/roles', RoleRoute);
 
     // user routes
-    // app.use('/api/users', UserRoute);
+    app.use('/api/users/auth', UserAuthRoute);
 }
