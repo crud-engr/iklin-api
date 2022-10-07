@@ -4,21 +4,27 @@ const TemporarySignupSchema = new mongoose.Schema(
     {
         email: {
             type: String,
+            required: true,
         },
         firstName: {
             type: String,
+            default: '',
         },
         lastName: {
             type: String,
+            default: '',
         },
         phone: {
             type: String,
+            default: '',
         },
         password: {
             type: String,
+            default: '',
         },
         confirmPassword: {
             type: String,
+            default: '',
         },
         referral: {
             type: String,

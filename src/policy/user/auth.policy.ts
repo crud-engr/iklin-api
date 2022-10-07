@@ -34,4 +34,32 @@ export class AuthPolicy {
             });
         }
     }
+
+    async validateActivateBasicRegistration(
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) {
+        const schema = Joi.object({
+            otp: Joi.string().required().messages({
+                'string.required': 'otp is required',
+                'string.empty': 'otp cannot be empty',
+            }),
+        }).options({ abortEarly: true });
+
+        try {
+            const value = await schema.validateAsync(req.body);
+            next();
+        } catch (err: any) {
+            let errMessage = err.details[0].message.split(' ');
+            let [field, ...others] = errMessage;
+            field = field.replace(/['"]+/g, '');
+            let newErrorMessage = `${field} ${others.join(' ')}`;
+            return res.status(422).json({
+                status: 'error',
+                message: newErrorMessage,
+                code: 422,
+            });
+        }
+    }
 }

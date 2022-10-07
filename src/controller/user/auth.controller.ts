@@ -13,4 +13,16 @@ export class AuthController {
             });
         }
     }
+
+    async activateBasicRegistration(req: Request, res: Response) {
+        try {
+            return new AuthService().activateBasicRegistration(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
 }

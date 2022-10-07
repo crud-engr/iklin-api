@@ -11,4 +11,11 @@ router
         new AuthController().saveBasicRegistration,
     );
 
+router
+    .route('/activate_basic_signup')
+    .post(
+        [new AuthPolicy().validateActivateBasicRegistration],
+        new AuthController().activateBasicRegistration,
+    );
+
 export default router;
