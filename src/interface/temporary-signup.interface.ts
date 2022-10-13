@@ -6,12 +6,9 @@ export interface ITemporarySignup extends mongoose.Document {
     lastName: string;
     phone: string;
     password: string;
-    confirmPassword: string;
     referral: string;
     location: string;
     role: string;
-    addLocation: boolean;
-    addCard: boolean;
     activated: boolean;
     activationToken: string;
     createdAt: Date;

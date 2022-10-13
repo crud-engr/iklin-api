@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const TemporarySignupSchema = new mongoose.Schema(
+const UserSchema = new mongoose.Schema(
     {
         email: {
             type: String,
@@ -8,19 +8,19 @@ const TemporarySignupSchema = new mongoose.Schema(
         },
         firstName: {
             type: String,
-            default: '',
+            required: true,
         },
         lastName: {
             type: String,
-            default: '',
+            required: true,
         },
         phone: {
             type: String,
-            default: '',
+            required: true,
         },
         password: {
             type: String,
-            default: '',
+            required: true,
         },
         referral: {
             type: String,
@@ -36,7 +36,26 @@ const TemporarySignupSchema = new mongoose.Schema(
         },
         activationToken: {
             type: String,
+        },
+        notificationCounter: {
+            type: Number,
+            default: 0,
+        },
+        profileImage: {
+            type: String,
             default: '',
+        },
+        // useFingerprint: {
+        //     type: Boolean,
+        //     default: false,
+        // },
+        // device_token: {
+        //     type: String,
+        //     default: '',
+        // },
+        isDeleted: {
+            type: Boolean,
+            default: false,
         },
         role: {
             type: String,
@@ -49,4 +68,4 @@ const TemporarySignupSchema = new mongoose.Schema(
     },
 );
 
-export default mongoose.model('TemporarySignup', TemporarySignupSchema);
+export default mongoose.model('User', UserSchema);
