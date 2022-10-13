@@ -8,7 +8,10 @@ let sendchamp_public_access_key: string = config.get(
 let email_name_from: string = config.get('EMAIL_NAME_FROM');
 let email_from: string = config.get('EMAIL_FROM');
 
-export const sendBasicSignupOTPEmail = async (email: string, otp: string) => {
+export const sendBasicSignupOTPEmail = async (
+    email: string,
+    otp: string,
+): Promise<void> => {
     try {
         const response: any = await axios(sendchamp_email_url, {
             method: 'POST',
@@ -24,8 +27,7 @@ export const sendBasicSignupOTPEmail = async (email: string, otp: string) => {
                     type: 'text/html',
                     value: `Hi ${
                         email.split('@')[0]
-                    }, \n\n Please enter the following verification code to verify your Iklin Account. 
-                    \n\n OTP: ${otp}`,
+                    }, \n\n Use this code ${otp} as your One Time Password to verify your Iklin Account.`,
                 },
                 subject: 'Iklin Verification Code',
             },

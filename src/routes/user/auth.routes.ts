@@ -18,4 +18,16 @@ router
         new AuthController().activateBasicRegistration,
     );
 
+router
+    .route('/complete_signup_process')
+    .post(
+        [new AuthPolicy().validateCompleteSignupProcess],
+        new AuthController().completeSignupProcess,
+    );
+
+router.route('/save_location').post(new AuthController().saveLocation);
+router
+    .route('/save_card')
+    .post([new AuthPolicy().validateSaveCard], new AuthController().saveCard);
+
 export default router;
