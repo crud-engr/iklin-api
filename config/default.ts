@@ -15,4 +15,6 @@ export default {
     EMAIL_FROM: process.env.EMAIL_FROM,
     SENDCHAMP_EMAIL_URL: process.env.SENDCHAMP_EMAIL_URL,
     SENDCHAMP_PUB_ACCESS_KEY: process.env.SENDCHAMP_PUB_ACCESS_KEY,
+    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
 };

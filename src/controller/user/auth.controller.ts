@@ -61,4 +61,52 @@ export class AuthController {
             });
         }
     }
+
+    async resendToken(req: Request, res: Response) {
+        try {
+            return new AuthService().resendToken(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        try {
+            return new AuthService().resetPassword(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async forgotPassword(req: Request, res: Response) {
+        try {
+            return new AuthService().forgotPassword(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async login(req: Request, res: Response) {
+        try {
+            return new AuthService().login(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
 }

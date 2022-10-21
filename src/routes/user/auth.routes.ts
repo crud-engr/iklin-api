@@ -26,8 +26,27 @@ router
     );
 
 router.route('/save_location').post(new AuthController().saveLocation);
+
 router
     .route('/save_card')
     .post([new AuthPolicy().validateSaveCard], new AuthController().saveCard);
+
+router
+    .route('/resend_token')
+    .post(
+        [new AuthPolicy().validateBasicRegistration],
+        new AuthController().resendToken,
+    );
+
+router
+    .route('/reset_password')
+    .post(
+        [new AuthPolicy().validateResetPassword],
+        new AuthController().resetPassword,
+    );
+
+router.route('/forgot_password').post(new AuthController().forgotPassword);
+
+router.route('/login').post(new AuthController().login);
 
 export default router;

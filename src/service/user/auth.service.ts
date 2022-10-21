@@ -2,13 +2,20 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import config from 'config';
-
+import jwt from 'jsonwebtoken';
 import TemporarySignup from '../../model/TemporarySignup';
 import { sendBasicSignupOTPEmail } from '../../mails/signupOTP';
 import OTP from '../../model/OTP';
 import moment from 'moment';
 import { accountVerificationSuccessEmail } from '../../mails/accountVerifySuccess';
 import User from '../../model/User';
+import Card from '../../model/Card';
+import Wallet from '../../model/Wallet';
+import { IWallet } from '../../interface/wallet.interface';
+import { ICard } from '../../interface/card.interface';
+import { sendResetPasswordOTPEmail } from '../../mails/resetPassword';
+import { sendResetPasswordSuccessEmail } from '../../mails/resetPasswordSuccess';
+import { IUser } from '../../interface/user.interface';
 // import recordActivityLogs from '../../utils/activityLogs';
 
 export class AuthService {
@@ -90,6 +97,7 @@ export class AuthService {
                 .update(otp)
                 .digest('hex');
             const isOTPFound = await OTP.findOne({
+                email,
                 otpCode: hashed_otp,
                 used: false,
             }).exec();
@@ -174,10 +182,7 @@ export class AuthService {
                 });
             }
             phone = await this.reformatPhoneNumber(phone);
-            password = await bcrypt.hash(
-                password,
-                parseInt(config.get('PASSWORD_SALT')),
-            );
+            password = await this.hashPassword(password);
             let fieldsToUpdate: object = {
                 email,
                 firstName,
@@ -190,9 +195,7 @@ export class AuthService {
                 { email },
                 fieldsToUpdate,
             ).exec();
-
             const user = await TemporarySignup.findOne({ email }).exec();
-
             const finalUser = new User({
                 email: user?.email,
                 firstName: user?.firstName,
@@ -204,7 +207,8 @@ export class AuthService {
                 activationToken: user?.activationToken,
             });
             await finalUser.save();
-            // prepare user wallet here---------
+            // prepare user wallet
+            await this.prepareUserWallet(finalUser._id.toString());
             await TemporarySignup.deleteOne({ email }).exec();
             return res.status(201).json({
                 status: 'success',
@@ -259,25 +263,315 @@ export class AuthService {
         }
     }
 
+    async validateCard(expiryDate: string): Promise<Boolean> {
+        let expiry_month: number = parseInt(expiryDate.split('/')[0]);
+        let expiry_year: number = parseInt(expiryDate.split('/')[1]);
+        let current_month = moment().month();
+        let current_year = parseInt(moment().year().toString().substring(2));
+        if (current_year > expiry_year || current_month > expiry_month) {
+            return false;
+        }
+        return true;
+    }
+
+    async signJWTToken(userId: string) {
+        return jwt.sign({ userId }, config.get('JWT_SECRET'), {
+            expiresIn: config.get('JWT_EXPIRES_IN'),
+        });
+    }
+
+    async prepareUserWallet(userId: string): Promise<IWallet> {
+        try {
+            console.log('Preparing user wallet -----------------');
+            return await Wallet.create({ user: userId });
+        } catch (err: any) {
+            console.log('Error creating user wallet');
+            throw new Error('Error creating user wallet');
+        }
+    }
+
     // send email to this endpoint
     async saveCard(req: Request, res: Response) {
         try {
             const card_number: string = req.body.cardNumber;
-            const expiry: Date = req.body.expiry;
+            let expiry: string = req.body.expiry;
             const cvv: number = req.body.cvv;
             const email: string = req.body.email;
-            if (!email) {
+            const user = await User.findOne({ email }).exec();
+            if (!user) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'User not found',
                     code: 400,
                 });
             }
-            // await User.findOne({ email }).exec();
-
+            const findCard = await Card.findOne({
+                cardNumber: card_number,
+            }).exec();
+            if (findCard) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Card already exist',
+                    code: 400,
+                });
+            }
+            // validate card
+            const isCardValid = await this.validateCard(expiry);
+            if (!isCardValid) {
+                return res.status(200).json({
+                    status: 'error',
+                    message: 'Invalid or expired card',
+                    code: 200,
+                });
+            }
+            const card: ICard = new Card({
+                user: user._id,
+                cardNumber: card_number,
+                expiry,
+                cvv,
+            });
+            await card.save();
+            const token: string = await this.signJWTToken(user._id);
             return res.status(200).json({
                 status: 'success',
-                message: 'Card successfully saved',
+                message: 'Account successfully completed',
+                token,
+                code: 200,
+            });
+        } catch (err: any) {
+            console.log(err.message);
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    // send email to this endpoint
+    async resendToken(req: Request, res: Response) {
+        try {
+            const email: string = req.body.email;
+            const user = await User.findOne({ email }).exec();
+            if (!user) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'User not found',
+                    code: 400,
+                });
+            }
+            const otp = await this.generateOTP();
+            console.log('O-T-P: ', otp);
+            await sendBasicSignupOTPEmail(email, otp);
+            const hashedOTP = crypto
+                .createHash('sha256')
+                .update(otp)
+                .digest('hex');
+            await User.findOneAndUpdate(
+                { email },
+                { email, activationToken: hashedOTP },
+            );
+            await OTP.findOneAndUpdate(
+                { email },
+                {
+                    email,
+                    otpCode: hashedOTP,
+                    expiry: moment().add('5', 'minutes'),
+                    used: false,
+                },
+                { new: true, upsert: true, setDefaultsOnInsert: true },
+            ).exec();
+            return res.status(200).json({
+                status: 'success',
+                message: 'Token successfully resent.',
+                code: 200,
+            });
+        } catch (err: any) {
+            console.log(err.message);
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async forgotPassword(req: Request, res: Response) {
+        try {
+            const email: string = req.body.email;
+            if (!email) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Email is required',
+                    code: 400,
+                });
+            }
+            const user = await User.findOne({ email }).exec();
+            if (!user) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'User not found',
+                    code: 400,
+                });
+            }
+            const otp: string = await this.generateOTP();
+            console.log('O-T-P: ', otp);
+            await sendResetPasswordOTPEmail(email, otp, user.firstName);
+            const hashedOTP = crypto
+                .createHash('sha256')
+                .update(otp)
+                .digest('hex');
+            await User.findOneAndUpdate(
+                { email },
+                { email, activationToken: hashedOTP },
+            );
+            await OTP.findOneAndUpdate(
+                { email },
+                {
+                    email,
+                    otpCode: hashedOTP,
+                    expiry: moment().add('5', 'minutes'),
+                    used: false,
+                },
+                { new: true, upsert: true, setDefaultsOnInsert: true },
+            ).exec();
+            return res.status(200).json({
+                status: 'success',
+                message: `A reset code has been sent to ${email}`,
+            });
+        } catch (err: any) {
+            console.log(err.message);
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response) {
+        try {
+            const token: string = req.body.token;
+            const password: string = req.body.password;
+            // const confirmPassword: string = req.body.confirmPassword;
+            // compare token
+            const hashedToken = crypto
+                .createHash('sha256')
+                .update(token)
+                .digest('hex');
+            // check if token is there.
+            const tokenExist = await OTP.findOne({
+                otpCode: hashedToken,
+                used: false,
+            }).exec();
+            if (!tokenExist) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Token not found',
+                    code: 400,
+                });
+            }
+            // check if token not yet expired
+            const now = moment(Date.now());
+            const sent = moment(tokenExist.expiry);
+            const duration = moment.duration(now.diff(sent));
+            const mins = duration.asMinutes();
+            if (mins > 60) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Invalid or expired token',
+                    code: 400,
+                });
+            }
+            // hash new password
+            const hashedPassword = await this.hashPassword(password);
+            await User.findOneAndUpdate(
+                { email: tokenExist.email },
+                { email: tokenExist.email, password: hashedPassword },
+            ).exec();
+            await OTP.findOneAndUpdate(
+                { email: tokenExist.email, used: false },
+                { email: tokenExist.email, used: true },
+            ).exec();
+            // const user: IUser | null = await User.findOne({
+            //     email: tokenExist.email,
+            // }).exec();
+            // send password reset success mail-----------------------------
+            // await sendResetPasswordSuccessEmail(user?.email, user?.firstName);
+            return res.status(200).json({
+                status: 'success',
+                message: 'Password successfully reset',
+                code: 200,
+            });
+        } catch (err: any) {
+            console.log(err.message);
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async hashPassword(password: string) {
+        return await bcrypt.hash(
+            password,
+            parseInt(config.get('PASSWORD_SALT')),
+        );
+    }
+
+    async login(req: Request, res: Response) {
+        try {
+            const email: string = req.body.email;
+            const password: string = req.body.password;
+            const user = await User.findOne({ email }).exec();
+            if (!user) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Invalid email',
+                    code: 401,
+                });
+            }
+            if (!(await user.comparePasswordMatch(password))) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Invalid password',
+                    code: 401,
+                });
+            }
+            if (!user.isUserAuthorized('user')) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'User is not authorized for this resource',
+                    code: 401,
+                });
+            }
+            if (user.isDeleted) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'User does not exists',
+                    code: 401,
+                });
+            }
+            if (user.isLocked) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Account is temporarily locked',
+                    code: 401,
+                });
+            }
+            if (!user.activated) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'Account is not activated',
+                    code: 401,
+                });
+            }
+            const token = await this.signJWTToken(user._id);
+            return res.status(200).json({
+                status: 'success',
+                message: 'Login successful',
+                data: { token },
                 code: 200,
             });
         } catch (err: any) {
