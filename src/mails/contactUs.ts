@@ -27,7 +27,11 @@ export const sendContactUsEmail = async (
                 from: { name: user_name, email: user_email },
                 message_body: {
                     type: 'text/html',
-                    value: `Hello Iklin, \n\n ${user_message}`,
+                    value: `
+                        <div>
+                            <p>Hello Iklin.</p>
+                            <p>${user_message}</p>
+                        </div>`,
                 },
                 subject,
             },
