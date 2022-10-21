@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { IUser } from '../interface/user.interface';
 
 const UserSchema = new mongoose.Schema(
     {
@@ -57,6 +59,10 @@ const UserSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        isLocked: {
+            type: Boolean,
+            default: false,
+        },
         role: {
             type: String,
             default: 'user',
@@ -68,4 +74,14 @@ const UserSchema = new mongoose.Schema(
     },
 );
 
-export default mongoose.model('User', UserSchema);
+UserSchema.methods.comparePasswordMatch = async function (
+    password: string,
+): Promise<Boolean> {
+    return await bcrypt.compare(password, this.password);
+};
+
+UserSchema.methods.isUserAuthorized = function (role: string): boolean {
+    return this.role === role ? true : false;
+};
+
+export default mongoose.model<IUser>('User', UserSchema);

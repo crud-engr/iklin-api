@@ -29,10 +29,12 @@ export const accountVerificationSuccessEmail = async (
                 from: { name: email_name_from, email: email_from },
                 message_body: {
                     type: 'text/html',
-                    value: `Hi ${
-                        email.split('@')[0]
-                    }, \n\n Your Iklin account has been successfully verified.
-                    \n\n Please proceed to complete your profile setup`,
+                    value: ` 
+                        <div>
+                            <p>Hi ${email.split('@')[0]}.</p>
+                            <p>Your Iklin account has been successfully verified</p>
+                            <p>Please proceed to complete your profile setup.</p>
+                        </div>`,
                 },
                 subject: 'Iklin Verification Successful',
             },
