@@ -25,9 +25,11 @@ export const sendBasicSignupOTPEmail = async (
                 from: { name: email_name_from, email: email_from },
                 message_body: {
                     type: 'text/html',
-                    value: `Hi ${
-                        email.split('@')[0]
-                    }, \n\n Use this code ${otp} as your One Time Password to verify your Iklin Account.`,
+                    value: `
+                        <div>
+                            <p>Hi ${email.split('@')[0]}.</p>
+                            <p>Use this code ${otp} as your One Time Password to verify your Iklin Account</p>
+                        </div>`,
                 },
                 subject: 'Iklin Verification Code',
             },
