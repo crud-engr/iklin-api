@@ -4,8 +4,10 @@
     "description": "",
     "main": "app.ts",
     "scripts": {
-        "start": "node app.ts",
-        "dev": "nodemon --config nodemon.json src/app.ts",
+        "start": "node dist/src/app.js",
+        "test": "jest",
+        "dev": "nodemon --config nodemon.json dist/src/app.js",
+        "watch-ts": "tsc -w",
         "format": "prettier --ignore-path .gitignore --write \"**/*.{ts}\"",
         "prepare": "husky install"
     },
@@ -23,17 +25,21 @@
         "@types/config": "^3.3.0",
         "@types/cors": "^2.8.12",
         "@types/express": "^4.17.14",
+        "@types/jest": "^29.2.0",
         "@types/jsonwebtoken": "^8.5.9",
         "@types/lodash": "^4.14.185",
         "@types/mongoose": "^5.11.97",
         "@types/node": "^18.7.21",
         "@types/nodemailer": "^6.4.6",
+        "@types/supertest": "^2.0.12",
         "dayjs": "^1.11.5",
         "dotenv": "^16.0.2",
         "husky": "^8.0.0",
+        "jest": "^29.2.1",
         "lint-staged": "^13.0.3",
         "pino": "^8.6.0",
         "pino-pretty": "^9.1.0",
+        "supertest": "^6.3.0",
         "ts-node": "^10.9.1",
         "typescript": "^4.8.3"
     },
@@ -69,6 +75,9 @@
         "nodemailer": "^6.8.0",
         "prettier": "^2.7.1",
         "pug": "^3.0.2"
+    },
+    "engines": {
+        "node": "16.17.0"
     },
     "lint-staged": {
         "*.{ts}": [
