@@ -11,7 +11,7 @@ import log from './logger';
 import connect from './db/connect';
 import routes from './routes/routes';
 
-const port: number = parseInt(config.get('PORT'));
+const port: number = parseInt(config.get('PORT')) | 3001;
 const host: string = config.get('HOST');
 
 // start express app
