@@ -2,7 +2,7 @@
     "name": "iklin-api",
     "version": "1.0.0",
     "description": "",
-    "main": "app.ts",
+    "main": "dist/app.js",
     "scripts": {
         "start": "node dist/src/app.js",
         "test": "jest",
