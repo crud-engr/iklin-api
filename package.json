@@ -80,7 +80,7 @@
         "node": "16.17.0"
     },
     "lint-staged": {
-        "*.{ts}": [
+        "*.{ts,js}": [
             "prettier --write"
         ]
     }
