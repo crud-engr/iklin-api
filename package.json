@@ -2,9 +2,9 @@
     "name": "iklin-api",
     "version": "1.0.0",
     "description": "",
-    "main": "dist/app.js",
+    "main": "app.ts",
     "scripts": {
-        "start": "SET NODE_ENV=production & node dist/app.js",
+        "start": "node dist/app.js",
         "dev": "nodemon --config nodemon.json dist/app.js",
         "build": "tsc",
         "format": "prettier --ignore-path .gitignore --write \"**/*.ts\"",
