@@ -5,7 +5,6 @@
     "main": "dist/app.js",
     "scripts": {
         "start": "SET NODE_ENV=production & node dist/app.js",
-        "test": "jest",
         "dev": "nodemon --config nodemon.json dist/app.js",
         "build": "tsc",
         "format": "prettier --ignore-path .gitignore --write \"**/*.ts\"",
