@@ -7,7 +7,6 @@ export default {
     // MAILTRAP_EMAIL_USERNAME: process.env.EMAIL_USERNAME,
     // MAILTRAP_EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
     PORT: process.env.PORT,
-    HOST: process.env.HOST,
     DBURI: process.env.DBURI,
     PASSWORD_SALT: process.env.PASSWORD_SALT,
     NODE_ENV: process.env.NODE_ENV,
