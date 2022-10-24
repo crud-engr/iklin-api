@@ -12,7 +12,6 @@ import connect from './db/connect';
 import routes from './routes/routes';
 
 const port: number = parseInt(config.get('PORT')) || 3001;
-const host: string = config.get('HOST');
 
 // start express app
 const app = express();
@@ -31,12 +30,8 @@ app.use(helmet());
 app.use(mongoSanitize());
 app.use(compression());
 
-// const PORT = Number(process.env.PORT) || 3001;
-console.log(port);
-console.log(typeof port);
-
 app.listen(port, async () => {
-    log.info(`Server running on http://${host}:${port}`);
+    log.info(`Server running on http://localhost:${port}`);
     // start db connection
     await connect();
     // initialize routes
