@@ -4,9 +4,8 @@
     "description": "",
     "main": "app.ts",
     "scripts": {
-        "start": "node build/app.js",
-        "dev": "nodemon --config nodemon.json app.ts",
-        "postinstall": "tsc",
+        "start": "tsc & set NODE_ENV=production & node build/app.js",
+        "dev": "tsc & nodemon --config nodemon.json build/app.js",
         "format": "prettier --ignore-path .gitignore --write \"**/*.ts\"",
         "prepare": "husky install"
     },
