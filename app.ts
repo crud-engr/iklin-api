@@ -31,7 +31,8 @@ app.use(mongoSanitize());
 app.use(compression());
 
 app.listen(port, async () => {
-    log.info(`Server running on http://localhost:${port}`);
+    log.info(`${config.get('NODE_ENV')}`);
+    log.info(`Server running on port ${port}`);
     // start db connection
     await connect();
     // initialize routes
