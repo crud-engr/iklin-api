@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+    app:
+      container_name: app
+      restart: always
+      build: .
+      env_file: .env
+      environment:
+          - PORT=${PORT}
+          - DBURI=${DBURI}
+          - PASSWORD_SALT=${PASSWORD_SALT}
+          - SENDCHAMP_EMAIL_URL=${SENDCHAMP_EMAIL_URL}
+          - SENDCHAMP_PUB_ACCESS_KEY=${SENDCHAMP_PUB_ACCESS_KEY}
+          - EMAIL_NAME_FROM=${EMAIL_NAME_FROM}
+          - EMAIL_FROM=${EMAIL_FROM}
+          - JWT_SECRET=${JWT_SECRET}
+          - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      ports:
+          - 3003:80
+      depends_on:
+        - mongodb
+
+      labels:
+        - 'traefik.enable=true'
+        - 'traefik.docker.network=traefik-proxy'
+        ## HTTP
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}.entrypoints=web'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}.rule=Host(`${HOST}`)'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}.service=${TRAEFIK_MANAGER_ID}-secure'
+        - 'traefik.http.services.${TRAEFIK_MANAGER_ID}.loadbalancer.server.port=${PORT}'
+
+        # Redirect
+        - 'traefik.http.middlewares.https-redirect.redirectscheme.scheme=https'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}.middlewares=https-redirect'
+
+        ## HTTPS
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}-secure.entrypoints=websecure'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}-secure.rule=Host(`${HOST}`)'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}-secure.tls=${HTTPS_ROUTER_TLS_MODE}'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}-secure.tls.certresolver=default'
+        - 'traefik.http.routers.${TRAEFIK_MANAGER_ID}-secure.service=${TRAEFIK_MANAGER_ID}-secure'
+        - 'traefik.http.services.${TRAEFIK_MANAGER_ID}-secure.loadbalancer.server.port=${PORT}'
+
+        - 'traefik.http.middlewares.${TRAEFIK_MANAGER_ID}-auth.basicauth.users=${BASIC_AUTH_USERS}'
+
+      logging:
+          driver: 'json-file'
+          options:
+              max-file: '5'
+              max-size: '20m'
+
+    mongodb:
+        container_name: mongodb
+        image: mongo
+        restart: always
+        ports:
+            - 27017:27017
+
+networks:
+    traefik-proxy:
+        external: true
+    internal:
+        external: false
