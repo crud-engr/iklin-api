@@ -16,4 +16,8 @@ export default {
     SENDCHAMP_PUB_ACCESS_KEY: process.env.SENDCHAMP_PUB_ACCESS_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN,
+    TRAEFIK_MANAGER_ID: process.env.TRAEFIK_MANAGER_ID,
+    HTTPS_ROUTER_TLS_MODE: process.env.HTTPS_ROUTER_TLS_MODE,
+    BASIC_AUTH_USERS: process.env.BASIC_AUTH_USERS,
+    HOST: process.env.HOST,
 };
