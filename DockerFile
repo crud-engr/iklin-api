@@ -7,10 +7,11 @@ RUN ls -a
 RUN npm install
 
 FROM node:16.17.0-alpine
-# WORKDIR /usr
+WORKDIR /usr
 COPY package.json ./
 RUN npm install --only=production
 COPY --from=0 /usr .
-EXPOSE 80
+RUN ls -a
+EXPOSE 3003
 RUN npm run build
-CMD ["node","dist/app.js"]
+CMD ["node","/usr/dist/app.js"]
