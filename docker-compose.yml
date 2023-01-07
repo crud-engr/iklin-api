@@ -17,7 +17,7 @@ services:
             - JWT_SECRET=${JWT_SECRET}
             - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
         ports:
-            - 3003:80
+            - 3003:3003
         depends_on:
             - mongodb
 
