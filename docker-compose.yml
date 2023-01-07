@@ -19,8 +19,8 @@ services:
             - EMAIL_FROM=${EMAIL_FROM}
             - JWT_SECRET=${JWT_SECRET}
             - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
-        ports:
-            - 3003:3003
+        expose:
+            - ${PORT}
         depends_on:
             - mongodb
 
