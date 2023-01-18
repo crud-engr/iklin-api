@@ -20,15 +20,9 @@
     },
     "homepage": "https://github.com/crud-engr/iklin-api#readme",
     "devDependencies": {
-        "@types/config": "^3.3.0",
-        "@types/cors": "^2.8.12",
-        "@types/express": "^4.17.15",
         "@types/jest": "^29.2.0",
-        "@types/jsonwebtoken": "^8.5.9",
         "@types/lodash": "^4.14.185",
-        "@types/mongoose": "^5.11.97",
         "@types/node": "^18.11.18",
-        "@types/nodemailer": "^6.4.6",
         "@types/supertest": "^2.0.12",
         "dayjs": "^1.11.5",
         "dotenv": "^16.0.2",
@@ -40,19 +34,24 @@
         "pino": "^8.6.0",
         "pino-pretty": "^9.1.0",
         "supertest": "^6.3.0",
-        "ts-node": "^10.9.1",
         "typescript": "^4.8.3"
     },
     "dependencies": {
         "@types/bcryptjs": "^2.4.2",
         "@types/compression": "^1.7.2",
+        "@types/config": "^3.3.0",
+        "@types/cors": "^2.8.13",
+        "@types/express": "^4.17.15",
         "@types/express-mongo-sanitize": "^2.1.0",
         "@types/express-rate-limit": "^6.0.0",
         "@types/helmet": "^4.0.0",
         "@types/html-to-text": "^8.1.1",
         "@types/joi": "^17.2.3",
         "@types/joi-password-complexity": "^4.2.2",
+        "@types/jsonwebtoken": "^9.0.1",
+        "@types/mongoose": "^5.11.97",
         "@types/morgan": "^1.9.3",
+        "@types/nodemailer": "^6.4.7",
         "@types/pug": "^2.0.6",
         "axios": "^1.1.2",
         "bcryptjs": "^2.4.3",
@@ -72,7 +71,8 @@
         "mongoose": "^6.6.1",
         "nodemailer": "^6.8.0",
         "prettier": "^2.7.1",
-        "pug": "^3.0.2"
+        "pug": "^3.0.2",
+        "ts-node": "^10.9.1"
     },
     "engines": {
         "node": "16.17.0"
