@@ -11,14 +11,21 @@ services:
             - traefik-proxy
         environment:
             - PORT=${PORT}
+            - NODE_ENV=${NODE_ENV}
             - DBURI=${DBURI}
             - PASSWORD_SALT=${PASSWORD_SALT}
-            - SENDCHAMP_EMAIL_URL=${SENDCHAMP_EMAIL_URL}
-            - SENDCHAMP_PUB_ACCESS_KEY=${SENDCHAMP_PUB_ACCESS_KEY}
             - EMAIL_NAME_FROM=${EMAIL_NAME_FROM}
             - EMAIL_FROM=${EMAIL_FROM}
             - JWT_SECRET=${JWT_SECRET}
             - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+            - TRAEFIK_MANAGER_ID=${TRAEFIK_MANAGER_ID}
+            - HTTPS_ROUTER_TLS_MODE=${HTTPS_ROUTER_TLS_MODE}
+            - BASIC_AUTH_USERS=${BASIC_AUTH_USERS}
+            - HOST=${HOST}
+            - EMAIL_PASSWORD=${EMAIL_PASSWORD}
+            - EMAIL_USERNAME=${EMAIL_USERNAME}
+            - EMAIL_SERVICE=${EMAIL_SERVICE}
+            - EMAIL_PORT=${EMAIL_PORT}
         expose:
             - ${PORT}
         depends_on:
