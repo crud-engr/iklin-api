@@ -177,6 +177,15 @@ export class AuthPolicy {
         next: NextFunction,
     ) {
         const schema = Joi.object({
+            email: Joi.string()
+                .required()
+                .email({ minDomainSegments: 2, tlds: { allow: false } })
+                .trim()
+                .messages({
+                    'string.required': 'email is required',
+                    'string.empty': 'email cannot be empty',
+                    'string.email': 'email must be a valid email address',
+                }),
             token: Joi.string().required().messages({
                 'string.required': 'otp is required',
                 'string.empty': 'otp cannot be empty',

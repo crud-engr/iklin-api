@@ -4,17 +4,14 @@ import bcrypt from 'bcryptjs';
 import config from 'config';
 import jwt from 'jsonwebtoken';
 import TemporarySignup from '../../model/TemporarySignup';
-import { sendBasicSignupOTPEmail } from '../../mails/signupOTP';
+import { sendEmail } from '../../utils/Email';
 import OTP from '../../model/OTP';
 import moment from 'moment';
-import { accountVerificationSuccessEmail } from '../../mails/accountVerifySuccess';
 import User from '../../model/User';
 import Card from '../../model/Card';
 import Wallet from '../../model/Wallet';
 import { IWallet } from '../../interface/wallet.interface';
 import { ICard } from '../../interface/card.interface';
-import { sendResetPasswordOTPEmail } from '../../mails/resetPassword';
-import { sendResetPasswordSuccessEmail } from '../../mails/resetPasswordSuccess';
 import { IUser } from '../../interface/user.interface';
 // import recordActivityLogs from '../../utils/activityLogs';
 
@@ -24,22 +21,31 @@ export class AuthService {
     }
 
     async saveBasicRegistration(req: Request, res: Response) {
+        const { email } = req.body;
+        const user = await TemporarySignup.exists({ email });
+        if (user) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'User already exists',
+                code: 400,
+            });
+        }
+        const tempUser = new TemporarySignup({ email });
+        await tempUser.save();
+        const otp = await this.generateOTP();
+        // send otp mail to user
         try {
-            const { email } = req.body;
-            const user = await TemporarySignup.exists({ email });
-            if (user) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'User already exists',
-                    code: 400,
-                });
-            }
-            const tempUser = new TemporarySignup({ email });
-            await tempUser.save();
-            const otp = await this.generateOTP();
-            console.log('O-T-P: ', otp);
-            // send otp mail to user
-            await sendBasicSignupOTPEmail(email, otp);
+            await sendEmail({
+                to: tempUser.email,
+                subject: 'Iklin Verification Code',
+                text: `Hi ${
+                    tempUser.email.split('@')[0]
+                }, Use this code ${otp} as your One Time Password to verify your Iklin Account`,
+                html: `Hi <strong>${
+                    tempUser.email.split('@')[0]
+                }</strong>, <br /><br />Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
+            });
+
             // record log activity to database
             // await recordActivityLogs({
             //     email,
@@ -87,7 +93,15 @@ export class AuthService {
             if (!email) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'User not found',
+                    message: 'Bad request',
+                    code: 400,
+                });
+            }
+            const user = await TemporarySignup.findOne({ email }).exec();
+            if (!user) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Bad request',
                     code: 400,
                 });
             }
@@ -125,7 +139,16 @@ export class AuthService {
                 { otpCode: hashed_otp, used: true },
             ).exec();
             // send account verify mail
-            await accountVerificationSuccessEmail(isOTPFound.email!);
+            await sendEmail({
+                to: user.email,
+                subject: 'Iklin Activation Success',
+                text: `Hi ${
+                    user.email.split('@')[0]
+                }, Your account has been successfully verified. Please complete your onboarding process`,
+                html: `Hi <strong>${
+                    user.email.split('@')[0]
+                }</strong>, <br /><br />Your account has been successfully verified. Please complete your onboarding process`,
+            });
             await TemporarySignup.findOneAndUpdate(
                 { email: isOTPFound.email },
                 { email: isOTPFound.email, activated: true },
@@ -361,8 +384,16 @@ export class AuthService {
                 });
             }
             const otp = await this.generateOTP();
-            console.log('O-T-P: ', otp);
-            await sendBasicSignupOTPEmail(email, otp);
+            await sendEmail({
+                to: user.email,
+                subject: 'Iklin Verification Code',
+                text: `Hi ${
+                    user.email.split('@')[0]
+                }, Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
+                html: `Hi <strong>${
+                    user.email.split('@')[0]
+                }</strong>, <br /><br />Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
+            });
             const hashedOTP = crypto
                 .createHash('sha256')
                 .update(otp)
@@ -415,8 +446,26 @@ export class AuthService {
                 });
             }
             const otp: string = await this.generateOTP();
-            console.log('O-T-P: ', otp);
-            await sendResetPasswordOTPEmail(email, otp, user.firstName);
+            // console.log('O-T-P: ', otp);
+            const timeStamp = moment().format('LLLL');
+            await sendEmail({
+                to: user.email,
+                subject: 'Iklin Reset Password Code',
+                text: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Welcome Back!</p>
+                            <p>You forgot your password and requested for password reset on <strong>${timeStamp}</strong>.</p>
+                            <p>Use this reset code <strong>${otp}</strong> as your One Time Password to reset your Iklin password</p>
+                            <p>If this is not you, please ignore and send us a mail on hello@iklin.app </p>
+                        </div>`,
+                html: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Welcome Back!</p>
+                            <p>You forgot your password and requested for password reset on <strong>${timeStamp}</strong>.</p>
+                            <p>Use this reset code <strong>${otp}</strong> as your One Time Password to reset your Iklin password</p>
+                            <p>If this is not you, please ignore and send us a mail on hello@iklin.app </p>
+                        </div>`,
+            });
             const hashedOTP = crypto
                 .createHash('sha256')
                 .update(otp)
@@ -449,11 +498,28 @@ export class AuthService {
         }
     }
 
+    // send email to this endpoint
     async resetPassword(req: Request, res: Response) {
         try {
+            const email: string = req.body.email;
             const token: string = req.body.token;
             const password: string = req.body.password;
             // const confirmPassword: string = req.body.confirmPassword;
+            if (!email) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'bad request',
+                    code: 400,
+                });
+            }
+            const user = await User.findOne({ email }).exec();
+            if (!user) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'bad request',
+                    code: 400,
+                });
+            }
             // compare token
             const hashedToken = crypto
                 .createHash('sha256')
@@ -496,8 +562,21 @@ export class AuthService {
             // const user: IUser | null = await User.findOne({
             //     email: tokenExist.email,
             // }).exec();
-            // send password reset success mail-----------------------------
-            // await sendResetPasswordSuccessEmail(user?.email, user?.firstName);
+            const timeStamp = moment().format('LLLL');
+            await sendEmail({
+                to: user.email,
+                subject: 'Iklin Reset Password Success',
+                text: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Your password has been successfully reset on <strong>${timeStamp}</strong>.</p>
+                            <p>If this is not you, please contact us on hello@iklin.app </p>
+                        </div>`,
+                html: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Your password has been successfully reset on <strong>${timeStamp}</strong>.</p>
+                            <p>If this is not you, please contact us on hello@iklin.app </p>
+                        </div>`,
+            });
             return res.status(200).json({
                 status: 'success',
                 message: 'Password successfully reset',
@@ -567,6 +646,21 @@ export class AuthService {
                     code: 401,
                 });
             }
+            const timeStamp = moment().format('LLLL');
+            await sendEmail({
+                to: user.email,
+                subject: 'Iklin Login',
+                text: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>You just logged into your account on <strong>${timeStamp}</strong>.</p>
+                            <p>If this is not you, please reset your password and contact us on hello@iklin.app </p>
+                        </div>`,
+                html: `<div>
+                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>You just logged into your account on <strong>${timeStamp}</strong>.</p>
+                            <p>If this is not you, please reset your password and contact us on hello@iklin.app </p>
+                        </div>`,
+            });
             const token = await this.signJWTToken(user._id);
             return res.status(200).json({
                 status: 'success',
