@@ -7,7 +7,10 @@ export interface IUser extends mongoose.Document {
     phone: string;
     password: string;
     referral: string;
-    location: string;
+    address: string;
+    landmark: string;
+    city: string;
+    state: string;
     role: string;
     activated: boolean;
     profileImage: string;
