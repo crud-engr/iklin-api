@@ -129,48 +129,6 @@ export class AuthPolicy {
         }
     }
 
-    async validateSaveCard(req: Request, res: Response, next: NextFunction) {
-        const schema = Joi.object({
-            email: Joi.string()
-                .required()
-                .email({ minDomainSegments: 2, tlds: { allow: false } })
-                .trim()
-                .messages({
-                    'string.required': 'email is required',
-                    'string.empty': 'email cannot be empty',
-                    'string.email': 'email must be a valid email address',
-                }),
-            cardNumber: Joi.string().required().trim().messages({
-                'string.required': 'Card number is required',
-                'string.empty': 'Card number cannot be empty',
-            }),
-            expiry: Joi.string().required().trim().messages({
-                'string.required': 'expiry is required',
-                'string.empty': 'expiry cannot be empty',
-            }),
-            cvv: Joi.string().max(3).required().messages({
-                'string.required': 'cvv is required',
-                'string.empty': 'cvv cannot be empty',
-                'string.limit': 'cvv should be #{limit} digits',
-            }),
-        }).options({ abortEarly: true });
-
-        try {
-            const value = await schema.validateAsync(req.body);
-            next();
-        } catch (err: any) {
-            let errMessage = err.details[0].message.split(' ');
-            let [field, ...others] = errMessage;
-            field = field.replace(/['"]+/g, '');
-            let newErrorMessage = `${field} ${others.join(' ')}`;
-            return res.status(422).json({
-                status: 'error',
-                message: newErrorMessage,
-                code: 422,
-            });
-        }
-    }
-
     async validateResetPassword(
         req: Request,
         res: Response,
