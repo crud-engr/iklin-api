@@ -28,7 +28,19 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: '',
         },
-        location: {
+        address: {
+            type: String,
+            default: '',
+        },
+        landmark: {
+            type: String,
+            default: '',
+        },
+        city: {
+            type: String,
+            default: '',
+        },
+        state: {
             type: String,
             default: '',
         },
@@ -47,14 +59,6 @@ const UserSchema = new mongoose.Schema(
             type: String,
             default: '',
         },
-        // useFingerprint: {
-        //     type: Boolean,
-        //     default: false,
-        // },
-        // device_token: {
-        //     type: String,
-        //     default: '',
-        // },
         isDeleted: {
             type: Boolean,
             default: false,

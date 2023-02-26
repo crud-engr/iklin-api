@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import config from 'config';
@@ -8,12 +8,12 @@ import { sendEmail } from '../../utils/Email';
 import OTP from '../../model/OTP';
 import moment from 'moment';
 import User from '../../model/User';
-import Card from '../../model/Card';
-import Wallet from '../../model/Wallet';
-import { IWallet } from '../../interface/wallet.interface';
-import { ICard } from '../../interface/card.interface';
 import { IUser } from '../../interface/user.interface';
 // import recordActivityLogs from '../../utils/activityLogs';
+
+interface JwtPayload {
+    userId: string;
+}
 
 export class AuthService {
     async generateOTP() {
@@ -231,7 +231,7 @@ export class AuthService {
             });
             await finalUser.save();
             // prepare user wallet
-            await this.prepareUserWallet(finalUser._id.toString());
+            // await this.prepareUserWallet(finalUser._id.toString());
             await TemporarySignup.deleteOne({ email }).exec();
             return res.status(201).json({
                 status: 'success',
@@ -251,7 +251,10 @@ export class AuthService {
     // send email to this endpoint
     async saveLocation(req: Request, res: Response) {
         try {
-            const location: string = req.body.location;
+            const address: string = req.body.location;
+            const landmark: string = req.body.landmark;
+            const city: string = req.body.city;
+            const state: string = req.body.state;
             const email: string = req.body.email;
             if (!email) {
                 return res.status(400).json({
@@ -260,16 +263,37 @@ export class AuthService {
                     code: 400,
                 });
             }
-            if (!location) {
+            if (!address) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Location is required',
+                    message: 'Address is required',
+                    code: 400,
+                });
+            }
+            if (!landmark) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Landmark is required',
+                    code: 400,
+                });
+            }
+            if (!city) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'City is required',
+                    code: 400,
+                });
+            }
+            if (!state) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'State is required',
                     code: 400,
                 });
             }
             const user = await User.findOneAndUpdate(
                 { email },
-                { email, location },
+                { email, landmark, city, address, state },
             );
             return res.status(200).json({
                 status: 'success',
@@ -286,16 +310,16 @@ export class AuthService {
         }
     }
 
-    async validateCard(expiryDate: string): Promise<Boolean> {
-        let expiry_month: number = parseInt(expiryDate.split('/')[0]);
-        let expiry_year: number = parseInt(expiryDate.split('/')[1]);
-        let current_month = moment().month();
-        let current_year = parseInt(moment().year().toString().substring(2));
-        if (current_year > expiry_year || current_month > expiry_month) {
-            return false;
-        }
-        return true;
-    }
+    // async validateCard(expiryDate: string): Promise<Boolean> {
+    //     let expiry_month: number = parseInt(expiryDate.split('/')[0]);
+    //     let expiry_year: number = parseInt(expiryDate.split('/')[1]);
+    //     let current_month = moment().month();
+    //     let current_year = parseInt(moment().year().toString().substring(2));
+    //     if (current_year > expiry_year || current_month > expiry_month) {
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
     async signJWTToken(userId: string) {
         return jwt.sign({ userId }, config.get('JWT_SECRET'), {
@@ -303,75 +327,76 @@ export class AuthService {
         });
     }
 
-    async prepareUserWallet(userId: string): Promise<IWallet> {
-        try {
-            console.log('Preparing user wallet -----------------');
-            return await Wallet.create({ user: userId });
-        } catch (err: any) {
-            console.log('Error creating user wallet');
-            throw new Error('Error creating user wallet');
-        }
-    }
+    // async prepareUserWallet(userId: string): Promise<IWallet> {
+    //     try {
+    //         console.log('Preparing user wallet -----------------');
+    //         return await Wallet.create({ user: userId });
+    //     } catch (err: any) {
+    //         console.log('Error creating user wallet');
+    //         throw new Error('Error creating user wallet');
+    //     }
+    // }
 
     // send email to this endpoint
-    async saveCard(req: Request, res: Response) {
-        try {
-            const card_number: string = req.body.cardNumber;
-            let expiry: string = req.body.expiry;
-            const cvv: number = req.body.cvv;
-            const email: string = req.body.email;
-            const user = await User.findOne({ email }).exec();
-            if (!user) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'User not found',
-                    code: 400,
-                });
-            }
-            const findCard = await Card.findOne({
-                cardNumber: card_number,
-            }).exec();
-            if (findCard) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Card already exist',
-                    code: 400,
-                });
-            }
-            // validate card
-            const isCardValid = await this.validateCard(expiry);
-            if (!isCardValid) {
-                return res.status(200).json({
-                    status: 'error',
-                    message: 'Invalid or expired card',
-                    code: 200,
-                });
-            }
-            const card: ICard = new Card({
-                user: user._id,
-                cardNumber: card_number,
-                expiry,
-                cvv,
-            });
-            await card.save();
-            const token: string = await this.signJWTToken(user._id);
-            return res.status(200).json({
-                status: 'success',
-                message: 'Account successfully completed',
-                token,
-                code: 200,
-            });
-        } catch (err: any) {
-            console.log(err.message);
-            return res.status(500).json({
-                status: 'error',
-                message: 'an error occured',
-                code: 500,
-            });
-        }
-    }
+    // async saveCard(req: Request, res: Response) {
+    //     try {
+    //         const card_number: string = req.body.cardNumber;
+    //         let expiry: string = req.body.expiry;
+    //         const cvv: number = req.body.cvv;
+    //         const email: string = req.body.email;
+    //         const user = await User.findOne({ email }).exec();
+    //         if (!user) {
+    //             return res.status(400).json({
+    //                 status: 'error',
+    //                 message: 'User not found',
+    //                 code: 400,
+    //             });
+    //         }
+    //         const findCard = await Card.findOne({
+    //             cardNumber: card_number,
+    //         }).exec();
+    //         if (findCard) {
+    //             return res.status(400).json({
+    //                 status: 'error',
+    //                 message: 'Card already exist',
+    //                 code: 400,
+    //             });
+    //         }
+    //         // validate card
+    //         const isCardValid = await this.validateCard(expiry);
+    //         if (!isCardValid) {
+    //             return res.status(200).json({
+    //                 status: 'error',
+    //                 message: 'Invalid or expired card',
+    //                 code: 200,
+    //             });
+    //         }
+    //         const card: ICard = new Card({
+    //             user: user._id,
+    //             cardNumber: card_number,
+    //             expiry,
+    //             cvv,
+    //         });
+    //         await card.save();
+    //         const token: string = await this.signJWTToken(user._id);
+    //         return res.status(200).json({
+    //             status: 'success',
+    //             message: 'Account successfully completed',
+    //             token,
+    //             code: 200,
+    //         });
+    //     } catch (err: any) {
+    //         console.log(err.message);
+    //         return res.status(500).json({
+    //             status: 'error',
+    //             message: 'an error occured',
+    //             code: 500,
+    //         });
+    //     }
+    // }
 
     // send email to this endpoint
+
     async resendToken(req: Request, res: Response) {
         try {
             const email: string = req.body.email;
@@ -674,6 +699,63 @@ export class AuthService {
                 status: 'error',
                 message: 'an error occured',
                 code: 500,
+            });
+        }
+    }
+
+    async protect(req: Request, res: Response, next: NextFunction) {
+        try {
+            let token: string = '';
+            // grab token from the headers
+            if (
+                req.headers.authorization &&
+                req.headers.authorization.startsWith('Bearer')
+            ) {
+                token = req.headers.authorization.split(' ')[1];
+            }
+            // confirm token
+            if (!token) {
+                return res.status(401).json({
+                    status: 'error',
+                    message:
+                        'You are not authenticated. Please login to gain access',
+                    code: 401,
+                });
+            }
+            // verify token
+            const { userId } = jwt.verify(
+                token,
+                config.get('JWT_SECRET'),
+            ) as JwtPayload;
+            // find user with the token
+            let user: IUser | null = await User.findOne({
+                _id: userId,
+            });
+            if (!user) {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'User with this token does not exist',
+                    code: 401,
+                });
+            }
+            if (user.role !== 'user') {
+                return res.status(401).json({
+                    status: 'error',
+                    message: 'User is not authorized to access this resource.',
+                    code: 401,
+                });
+            }
+            next();
+        } catch (err: any) {
+            if (err.name === 'TokenExpiredError') {
+                err.message = 'Token expired. Please login again.';
+            } else if (err.name === 'JsonWebTokenError') {
+                err.message = 'Invalid token. Please login again.';
+            }
+            return res.status(401).json({
+                status: 'error',
+                message: err.message,
+                code: 401,
             });
         }
     }
