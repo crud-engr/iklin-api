@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { AuthService } from '../../service/user/auth.service';
 
 export class AuthController {
@@ -50,18 +50,6 @@ export class AuthController {
         }
     }
 
-    async saveCard(req: Request, res: Response) {
-        try {
-            return new AuthService().saveCard(req, res);
-        } catch (err) {
-            return res.status(500).json({
-                status: 'error',
-                message: 'an error occured',
-                code: 500,
-            });
-        }
-    }
-
     async resendToken(req: Request, res: Response) {
         try {
             return new AuthService().resendToken(req, res);
@@ -101,6 +89,18 @@ export class AuthController {
     async login(req: Request, res: Response) {
         try {
             return new AuthService().login(req, res);
+        } catch (err) {
+            return res.status(500).json({
+                status: 'error',
+                message: 'an error occured',
+                code: 500,
+            });
+        }
+    }
+
+    async protect(req: Request, res: Response, next: NextFunction) {
+        try {
+            return new AuthService().protect(req, res, next);
         } catch (err) {
             return res.status(500).json({
                 status: 'error',
