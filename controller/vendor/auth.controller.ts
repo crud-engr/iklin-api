@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import { AuthService } from '../../service/user/auth.service';
+import { AuthService } from '../../service/vendor/auth.service';
 
-export class AuthController {
+export class VAuthController {
     async saveBasicRegistration(req: Request, res: Response) {
         try {
             return new AuthService().saveBasicRegistration(req, res);
@@ -29,18 +29,6 @@ export class AuthController {
     async completeSignupProcess(req: Request, res: Response) {
         try {
             return new AuthService().completeSignupProcess(req, res);
-        } catch (err) {
-            return res.status(500).json({
-                status: 'error',
-                message: 'an error occured',
-                code: 500,
-            });
-        }
-    }
-
-    async saveLocation(req: Request, res: Response) {
-        try {
-            return new AuthService().saveLocation(req, res);
         } catch (err) {
             return res.status(500).json({
                 status: 'error',

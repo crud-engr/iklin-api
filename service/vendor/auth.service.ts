@@ -1,18 +1,18 @@
-import { NextFunction, Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import config from 'config';
 import jwt from 'jsonwebtoken';
-import TemporarySignup from '../../model/TemporarySignup';
 import { sendEmail } from '../../utils/Email';
 import OTP from '../../model/OTP';
 import moment from 'moment';
 import User from '../../model/User';
-import { IUser } from '../../interface/user.interface';
-// import recordActivityLogs from '../../utils/activityLogs';
+import Vendor from '../../model/Vendor';
+import VTemporarySignup from '../../model/VTemporarySignup';
+import { IVendor } from '../../interface/vendor.interface';
 
 interface JwtPayload {
-    userId: string;
+    vendorId: string;
 }
 
 export class AuthService {
@@ -22,27 +22,36 @@ export class AuthService {
 
     async saveBasicRegistration(req: Request, res: Response) {
         const { email } = req.body;
-        const user = await TemporarySignup.exists({ email });
-        if (user) {
+        const vendor = await VTemporarySignup.exists({ email });
+        if (vendor) {
             return res.status(400).json({
                 status: 'error',
                 message: 'User already exists',
                 code: 400,
             });
         }
-        const tempUser = new TemporarySignup({ email });
-        await tempUser.save();
+        const userExist = await User.exists({ email });
+        if (userExist) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'User already exists.',
+                code: 400,
+            });
+        }
+        // check if user has the email
+        const tempVendor = new VTemporarySignup({ email });
+        await tempVendor.save();
         const otp = await this.generateOTP();
-        // send otp mail to user
+        // send otp mail to vendor
         try {
             await sendEmail({
-                to: tempUser.email,
+                to: tempVendor.email,
                 subject: 'Iklin Verification Code',
                 text: `Hi ${
-                    tempUser.email.split('@')[0]
+                    tempVendor.email.split('@')[0]
                 }, Use this code ${otp} as your One Time Password to verify your Iklin Account`,
                 html: `Hi <strong>${
-                    tempUser.email.split('@')[0]
+                    tempVendor.email.split('@')[0]
                 }</strong>, <br /><br />Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
             });
 
@@ -57,7 +66,7 @@ export class AuthService {
                 .createHash('sha256')
                 .update(otp)
                 .digest('hex');
-            await TemporarySignup.findOneAndUpdate(
+            await VTemporarySignup.findOneAndUpdate(
                 { email },
                 { email, activationToken: hashedOTP },
             );
@@ -73,7 +82,7 @@ export class AuthService {
             ).exec();
             return res.status(201).json({
                 status: 'success',
-                message: `Verification code has been sent to ${tempUser.email}`,
+                message: `Verification code has been sent to ${tempVendor.email}`,
                 code: 201,
             });
         } catch (err: any) {
@@ -90,18 +99,11 @@ export class AuthService {
     async activateBasicRegistration(req: Request, res: Response) {
         try {
             const { otp, email } = req.body;
-            if (!email) {
+            const vendor = await VTemporarySignup.findOne({ email }).exec();
+            if (!vendor) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Bad request',
-                    code: 400,
-                });
-            }
-            const user = await TemporarySignup.findOne({ email }).exec();
-            if (!user) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Bad request',
+                    message: 'Email not found',
                     code: 400,
                 });
             }
@@ -140,16 +142,16 @@ export class AuthService {
             ).exec();
             // send account verify mail
             await sendEmail({
-                to: user.email,
+                to: vendor.email,
                 subject: 'Iklin Activation Success',
                 text: `Hi ${
-                    user.email.split('@')[0]
+                    vendor.email.split('@')[0]
                 }, Your account has been successfully verified. Please complete your onboarding process`,
                 html: `Hi <strong>${
-                    user.email.split('@')[0]
+                    vendor.email.split('@')[0]
                 }</strong>, <br /><br />Your account has been successfully verified. Please complete your onboarding process`,
             });
-            await TemporarySignup.findOneAndUpdate(
+            await VTemporarySignup.findOneAndUpdate(
                 { email: isOTPFound.email },
                 { email: isOTPFound.email, activated: true },
             ).exec();
@@ -176,63 +178,108 @@ export class AuthService {
         return phone;
     }
 
+    // verify nin later
+    async verifyNin(data: string): Promise<boolean> {
+        return true;
+    }
+    // verify cac later
+    async verifyCACNumber(data: string): Promise<boolean> {
+        return true;
+    }
+
     // send email to this endpoint
     async completeSignupProcess(req: Request, res: Response) {
         try {
-            let { email, firstName, lastName, phone, password, referral } =
-                req.body;
-            const tempUser = await TemporarySignup.findOne({ email }).exec();
-            if (!tempUser) {
+            let {
+                email,
+                firstName,
+                lastName,
+                phone,
+                password,
+                businessName,
+                businessAddress,
+                profession,
+                nin,
+                cac,
+            } = req.body;
+            const tempVendor = await VTemporarySignup.findOne({ email }).exec();
+            if (!tempVendor) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'User not found',
                     code: 400,
                 });
             }
-            if (!tempUser.activated) {
+            if (!tempVendor.activated) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'account is not activated',
+                    message: 'Account is not activated',
                     code: 400,
                 });
             }
-            const userExist = await User.findOne({ email }).exec();
-            if (userExist) {
+            const vendorExist = await Vendor.findOne({ email }).exec();
+            if (vendorExist) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'user already exist',
+                    message: 'User already exist',
                     code: 400,
                 });
             }
             phone = await this.reformatPhoneNumber(phone);
             password = await this.hashPassword(password);
+            let ninIsVerified = await this.verifyNin(nin);
+            if (!ninIsVerified) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Invalid NIN supplied',
+                    code: 400,
+                });
+            }
+            let cacIsVerified = await this.verifyCACNumber(cac);
+            if (!cacIsVerified) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Invalid CAC supplied',
+                    code: 400,
+                });
+            }
             let fieldsToUpdate: object = {
                 email,
                 firstName,
                 lastName,
                 phone,
                 password,
-                referral: referral ? referral : '',
+                businessName,
+                businessAddress,
+                profession,
+                nin,
+                cac,
             };
-            await TemporarySignup.findOneAndUpdate(
+            await VTemporarySignup.findOneAndUpdate(
                 { email },
                 fieldsToUpdate,
             ).exec();
-            const user = await TemporarySignup.findOne({ email }).exec();
-            const finalUser = new User({
-                email: user?.email,
-                firstName: user?.firstName,
-                lastName: user?.lastName,
-                phone: user?.phone,
-                password: user?.password,
-                referral: user?.referral,
-                activated: user?.activated,
-                activationToken: user?.activationToken,
+            const vendor = await VTemporarySignup.findOne({ email }).exec();
+            const finalVendor = new Vendor({
+                email: vendor?.email,
+                firstName: vendor?.firstName,
+                lastName: vendor?.lastName,
+                phone: vendor?.phone,
+                password: vendor?.password,
+                referral: vendor?.referral,
+                activated: vendor?.activated,
+                activationToken: vendor?.activationToken,
+                businessName: vendor?.businessName,
+                businessAddress: vendor?.businessAddress,
+                profession: vendor?.profession,
+                nin: vendor?.nin,
+                cac: vendor?.cac,
+                isNINVerified: true,
+                isCACVerified: true,
+                isVerified: true,
             });
-            await finalUser.save();
-            // prepare user wallet
-            // await this.prepareUserWallet(finalUser._id.toString());
-            await TemporarySignup.deleteOne({ email }).exec();
+            await finalVendor.save();
+            await VTemporarySignup.deleteOne({ email }).exec();
             return res.status(201).json({
                 status: 'success',
                 message: 'Account successfully created',
@@ -248,160 +295,18 @@ export class AuthService {
         }
     }
 
-    // send email to this endpoint
-    async saveLocation(req: Request, res: Response) {
-        try {
-            const address: string = req.body.location;
-            const landmark: string = req.body.landmark;
-            const city: string = req.body.city;
-            const state: string = req.body.state;
-            const email: string = req.body.email;
-            if (!email) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'User not found',
-                    code: 400,
-                });
-            }
-            if (!address) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Address is required',
-                    code: 400,
-                });
-            }
-            if (!landmark) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'Landmark is required',
-                    code: 400,
-                });
-            }
-            if (!city) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'City is required',
-                    code: 400,
-                });
-            }
-            if (!state) {
-                return res.status(400).json({
-                    status: 'error',
-                    message: 'State is required',
-                    code: 400,
-                });
-            }
-            const user = await User.findOneAndUpdate(
-                { email },
-                { email, landmark, city, address, state },
-            );
-            return res.status(200).json({
-                status: 'success',
-                message: 'Location successfully saved',
-                code: 200,
-            });
-        } catch (err: any) {
-            console.log(err.message);
-            return res.status(500).json({
-                status: 'error',
-                message: 'an error occured',
-                code: 500,
-            });
-        }
-    }
-
-    // async validateCard(expiryDate: string): Promise<Boolean> {
-    //     let expiry_month: number = parseInt(expiryDate.split('/')[0]);
-    //     let expiry_year: number = parseInt(expiryDate.split('/')[1]);
-    //     let current_month = moment().month();
-    //     let current_year = parseInt(moment().year().toString().substring(2));
-    //     if (current_year > expiry_year || current_month > expiry_month) {
-    //         return false;
-    //     }
-    //     return true;
-    // }
-
-    async signJWTToken(userId: string) {
-        return jwt.sign({ userId }, config.get('JWT_SECRET'), {
+    async signJWTToken(vendorId: string) {
+        return jwt.sign({ vendorId }, config.get('JWT_SECRET'), {
             expiresIn: config.get('JWT_EXPIRES_IN'),
         });
     }
 
-    // async prepareUserWallet(userId: string): Promise<IWallet> {
-    //     try {
-    //         console.log('Preparing user wallet -----------------');
-    //         return await Wallet.create({ user: userId });
-    //     } catch (err: any) {
-    //         console.log('Error creating user wallet');
-    //         throw new Error('Error creating user wallet');
-    //     }
-    // }
-
     // send email to this endpoint
-    // async saveCard(req: Request, res: Response) {
-    //     try {
-    //         const card_number: string = req.body.cardNumber;
-    //         let expiry: string = req.body.expiry;
-    //         const cvv: number = req.body.cvv;
-    //         const email: string = req.body.email;
-    //         const user = await User.findOne({ email }).exec();
-    //         if (!user) {
-    //             return res.status(400).json({
-    //                 status: 'error',
-    //                 message: 'User not found',
-    //                 code: 400,
-    //             });
-    //         }
-    //         const findCard = await Card.findOne({
-    //             cardNumber: card_number,
-    //         }).exec();
-    //         if (findCard) {
-    //             return res.status(400).json({
-    //                 status: 'error',
-    //                 message: 'Card already exist',
-    //                 code: 400,
-    //             });
-    //         }
-    //         // validate card
-    //         const isCardValid = await this.validateCard(expiry);
-    //         if (!isCardValid) {
-    //             return res.status(200).json({
-    //                 status: 'error',
-    //                 message: 'Invalid or expired card',
-    //                 code: 200,
-    //             });
-    //         }
-    //         const card: ICard = new Card({
-    //             user: user._id,
-    //             cardNumber: card_number,
-    //             expiry,
-    //             cvv,
-    //         });
-    //         await card.save();
-    //         const token: string = await this.signJWTToken(user._id);
-    //         return res.status(200).json({
-    //             status: 'success',
-    //             message: 'Account successfully completed',
-    //             token,
-    //             code: 200,
-    //         });
-    //     } catch (err: any) {
-    //         console.log(err.message);
-    //         return res.status(500).json({
-    //             status: 'error',
-    //             message: 'an error occured',
-    //             code: 500,
-    //         });
-    //     }
-    // }
-
-    // send email to this endpoint
-
     async resendToken(req: Request, res: Response) {
         try {
             const email: string = req.body.email;
-            const user = await User.findOne({ email }).exec();
-            if (!user) {
+            const vendor = await Vendor.findOne({ email }).exec();
+            if (!vendor) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'User not found',
@@ -410,13 +315,13 @@ export class AuthService {
             }
             const otp = await this.generateOTP();
             await sendEmail({
-                to: user.email,
+                to: vendor.email,
                 subject: 'Iklin Verification Code',
                 text: `Hi ${
-                    user.email.split('@')[0]
+                    vendor.email.split('@')[0]
                 }, Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
                 html: `Hi <strong>${
-                    user.email.split('@')[0]
+                    vendor.email.split('@')[0]
                 }</strong>, <br /><br />Use this code <strong>${otp}</strong> as your One Time Password to verify your Iklin Account`,
             });
             const hashedOTP = crypto
@@ -462,8 +367,8 @@ export class AuthService {
                     code: 400,
                 });
             }
-            const user = await User.findOne({ email }).exec();
-            if (!user) {
+            const vendor = await Vendor.findOne({ email }).exec();
+            if (!vendor) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'User not found',
@@ -474,17 +379,17 @@ export class AuthService {
             // console.log('O-T-P: ', otp);
             const timeStamp = moment().format('LLLL');
             await sendEmail({
-                to: user.email,
+                to: vendor.email,
                 subject: 'Iklin Reset Password Code',
                 text: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>Welcome Back!</p>
                             <p>You forgot your password and requested for password reset on <strong>${timeStamp}</strong>.</p>
                             <p>Use this reset code <strong>${otp}</strong> as your One Time Password to reset your Iklin password</p>
                             <p>If this is not you, please ignore and send us a mail on hello@iklin.app </p>
                         </div>`,
                 html: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>Welcome Back!</p>
                             <p>You forgot your password and requested for password reset on <strong>${timeStamp}</strong>.</p>
                             <p>Use this reset code <strong>${otp}</strong> as your One Time Password to reset your Iklin password</p>
@@ -537,8 +442,8 @@ export class AuthService {
                     code: 400,
                 });
             }
-            const user = await User.findOne({ email }).exec();
-            if (!user) {
+            const vendor = await Vendor.findOne({ email }).exec();
+            if (!vendor) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'bad request',
@@ -576,7 +481,7 @@ export class AuthService {
             }
             // hash new password
             const hashedPassword = await this.hashPassword(password);
-            await User.findOneAndUpdate(
+            await Vendor.findOneAndUpdate(
                 { email: tokenExist.email },
                 { email: tokenExist.email, password: hashedPassword },
             ).exec();
@@ -584,20 +489,20 @@ export class AuthService {
                 { email: tokenExist.email, used: false },
                 { email: tokenExist.email, used: true },
             ).exec();
-            // const user: IUser | null = await User.findOne({
+            // const user: IVendor | null = await Vendor.findOne({
             //     email: tokenExist.email,
             // }).exec();
             const timeStamp = moment().format('LLLL');
             await sendEmail({
-                to: user.email,
+                to: vendor.email,
                 subject: 'Iklin Reset Password Success',
                 text: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>Your password has been successfully reset on <strong>${timeStamp}</strong>.</p>
                             <p>If this is not you, please contact us on hello@iklin.app </p>
                         </div>`,
                 html: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>Your password has been successfully reset on <strong>${timeStamp}</strong>.</p>
                             <p>If this is not you, please contact us on hello@iklin.app </p>
                         </div>`,
@@ -628,43 +533,44 @@ export class AuthService {
         try {
             const email: string = req.body.email;
             const password: string = req.body.password;
-            const user = await User.findOne({ email }).exec();
-            if (!user) {
+            const vendor = await Vendor.findOne({ email }).exec();
+            if (!vendor) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'Invalid email',
                     code: 401,
                 });
             }
-            if (!(await user.comparePasswordMatch(password))) {
+            if (!(await vendor.comparePasswordMatch(password))) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'Invalid password',
                     code: 401,
                 });
             }
-            if (!user.isUserAuthorized('user')) {
+            if (!vendor.isUserAuthorized('vendor')) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'User is not authorized for this resource',
                     code: 401,
                 });
             }
-            if (user.isDeleted) {
+            if (vendor.isDeleted) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'User does not exists',
                     code: 401,
                 });
             }
-            if (user.isLocked) {
+            if (vendor.isLocked) {
                 return res.status(401).json({
                     status: 'error',
-                    message: 'Account is temporarily locked',
+                    message:
+                        'Account is temporarily locked. Please contact admin',
                     code: 401,
                 });
             }
-            if (!user.activated) {
+            if (!vendor.activated) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'Account is not activated',
@@ -673,20 +579,20 @@ export class AuthService {
             }
             const timeStamp = moment().format('LLLL');
             await sendEmail({
-                to: user.email,
+                to: vendor.email,
                 subject: 'Iklin Login',
                 text: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>You just logged into your account on <strong>${timeStamp}</strong>.</p>
                             <p>If this is not you, please reset your password and contact us on hello@iklin.app </p>
                         </div>`,
                 html: `<div>
-                            <p>Hi <strong>${user.firstName}</strong>.</p>
+                            <p>Hi <strong>${vendor.firstName}</strong>.</p>
                             <p>You just logged into your account on <strong>${timeStamp}</strong>.</p>
                             <p>If this is not you, please reset your password and contact us on hello@iklin.app </p>
                         </div>`,
             });
-            const token = await this.signJWTToken(user._id);
+            const token = await this.signJWTToken(vendor._id);
             return res.status(200).json({
                 status: 'success',
                 message: 'Login successful',
@@ -694,7 +600,7 @@ export class AuthService {
                 code: 200,
             });
         } catch (err: any) {
-            console.log(err.message);
+            console.log(err);
             return res.status(500).json({
                 status: 'error',
                 message: 'an error occured',
@@ -723,22 +629,22 @@ export class AuthService {
                 });
             }
             // verify token
-            const { userId } = jwt.verify(
+            const { vendorId } = jwt.verify(
                 token,
                 config.get('JWT_SECRET'),
             ) as JwtPayload;
-            // find user with the token
-            let user: IUser | null = await User.findOne({
-                _id: userId,
+            // find vendor with the token
+            let vendor: IVendor | null = await Vendor.findOne({
+                _id: vendorId,
             });
-            if (!user) {
+            if (!vendor) {
                 return res.status(401).json({
                     status: 'error',
                     message: 'User with this token does not exist',
                     code: 401,
                 });
             }
-            if (user.role !== 'user') {
+            if (vendor.role !== 'vendor') {
                 return res.status(401).json({
                     status: 'error',
                     message: 'User is not authorized to access this resource.',

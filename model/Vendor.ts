@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { IUser } from '../interface/user.interface';
+import { IVendor } from '../interface/vendor.interface';
 
-const UserSchema = new mongoose.Schema(
+const VendorSchema = new mongoose.Schema(
     {
         email: {
             type: String,
@@ -20,27 +20,7 @@ const UserSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        password: {
-            type: String,
-            required: true,
-        },
-        referral: {
-            type: String,
-            default: '',
-        },
-        address: {
-            type: String,
-            default: '',
-        },
-        landmark: {
-            type: String,
-            default: '',
-        },
-        city: {
-            type: String,
-            default: '',
-        },
-        state: {
+        location: {
             type: String,
             default: '',
         },
@@ -69,8 +49,48 @@ const UserSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            default: 'user',
+            default: 'vendor',
         },
+        password: {
+            type: String,
+            required: true,
+        },
+        businessName: {
+            type: String,
+        },
+        businessAddress: {
+            type: String,
+        },
+        profession: {
+            type: String,
+        },
+        isNINVerified: {
+            type: Boolean,
+            default: false,
+        },
+        nin: {
+            type: String,
+        },
+        cac: {
+            type: String,
+        },
+        isCACVerified: {
+            type: Boolean,
+            default: false,
+        },
+        isVerified: {
+            type: Boolean,
+            default: false,
+        },
+        ratings: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Rating',
+        },
+        isOpen: {
+            type: Boolean,
+            default: true,
+        },
+        mostWashedItems: [{ item: String, quantity: Number }],
     },
     {
         timestamps: true,
@@ -78,14 +98,14 @@ const UserSchema = new mongoose.Schema(
     },
 );
 
-UserSchema.methods.comparePasswordMatch = async function (
+VendorSchema.methods.comparePasswordMatch = async function (
     password: string,
 ): Promise<Boolean> {
     return await bcrypt.compare(password, this.password);
 };
 
-UserSchema.methods.isUserAuthorized = function (role: string): boolean {
+VendorSchema.methods.isUserAuthorized = function (role: string): boolean {
     return this.role === role ? true : false;
 };
 
-export default mongoose.model<IUser>('User', UserSchema);
+export default mongoose.model<IVendor>('Vendor', VendorSchema);

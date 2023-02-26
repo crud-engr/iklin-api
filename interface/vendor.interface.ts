@@ -1,22 +1,26 @@
 import mongoose from 'mongoose';
 
-export interface IUser extends mongoose.Document {
+export interface IVendor extends mongoose.Document {
     email: string;
     firstName: string;
     lastName: string;
     phone: string;
-    password: string;
-    referral: string;
-    address: string;
-    landmark: string;
-    city: string;
-    state: string;
+    location: string;
     role: string;
     activated: boolean;
+    password: boolean;
     profileImage: string;
     isLocked: boolean;
     notificationCounter: number;
     activationToken: string;
+    businessName: string;
+    businessAddress: string;
+    profession: string;
+    nin: string;
+    cac: string;
+    isNINVerified: boolean;
+    isCACVerified: boolean;
+    isVerified: boolean;
     comparePasswordMatch(password: string): Promise<Boolean>;
     isUserAuthorized(role: string): Promise<Boolean>;
     isDeleted: boolean;
