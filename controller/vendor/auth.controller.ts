@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { AuthService } from '../../service/vendor/auth.service';
 
-export class VAuthController {
+export class AuthController {
     async saveBasicRegistration(req: Request, res: Response) {
         try {
             return new AuthService().saveBasicRegistration(req, res);
