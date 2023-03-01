@@ -6,8 +6,6 @@ import VendorAuthRoute from './vendor/auth.routes';
 import ContactRoute from './contact.routes';
 import UserOrderRoute from './user/order.routes';
 import AdminRoute from './admin/admin.routes';
-import { AuthController } from '../controller/user/auth.controller';
-// import { VAuthController } from '../controller/vendor/auth.controller';
 
 export default function (app: Express) {
     app.use((req: Request, res: Response, next: NextFunction) => {
@@ -25,11 +23,7 @@ export default function (app: Express) {
 
     // user routes
     app.use('/api/users/auth', UserAuthRoute);
-    app.use(
-        '/api/users/orders',
-        [new AuthController().protect],
-        UserOrderRoute,
-    );
+    app.use('/api/users/orders', UserOrderRoute);
 
     // vendor routes
     app.use('/api/vendors/auth', VendorAuthRoute);

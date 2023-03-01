@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { VAuthController } from '../../controller/vendor/auth.controller';
+import { AuthController } from '../../controller/vendor/auth.controller';
 import { AuthPolicy } from '../../policy/vendor/auth.policy';
 
 const router = Router();
@@ -8,41 +8,41 @@ router
     .route('/basic_signup')
     .post(
         [new AuthPolicy().validateBasicRegistration],
-        new VAuthController().saveBasicRegistration,
+        new AuthController().saveBasicRegistration,
     );
 
 router
     .route('/activate_basic_signup')
     .post(
         [new AuthPolicy().validateActivateBasicRegistration],
-        new VAuthController().activateBasicRegistration,
+        new AuthController().activateBasicRegistration,
     );
 
 router
     .route('/complete_signup_process')
     .post(
         [new AuthPolicy().validateCompleteSignupProcess],
-        new VAuthController().completeSignupProcess,
+        new AuthController().completeSignupProcess,
     );
 
 router
     .route('/resend_token')
     .post(
         [new AuthPolicy().validateBasicRegistration],
-        new VAuthController().resendToken,
+        new AuthController().resendToken,
     );
 
 router
     .route('/reset_password')
     .post(
         [new AuthPolicy().validateResetPassword],
-        new VAuthController().resetPassword,
+        new AuthController().resetPassword,
     );
 
-router.route('/forgot_password').post(new VAuthController().forgotPassword);
+router.route('/forgot_password').post(new AuthController().forgotPassword);
 
 router
     .route('/login')
-    .post([new AuthPolicy().validateLogin], new VAuthController().login);
+    .post([new AuthPolicy().validateLogin], new AuthController().login);
 
 export default router;
