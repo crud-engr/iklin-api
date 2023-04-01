@@ -75,6 +75,7 @@ export class AuthController {
     }
 
     async login(req: Request, res: Response) {
+        console.log('Login here!!!');
         try {
             return new AuthService().login(req, res);
         } catch (err) {

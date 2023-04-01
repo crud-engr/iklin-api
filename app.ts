@@ -33,6 +33,7 @@ app.use(compression());
 app.listen(port, async () => {
     // log.info(`${config.get('NODE_ENV')}`);
     log.info(`Server running on port ${port}`);
+    log.info('Start application::::::');
     // start db connection
     await connect();
     // initialize routes
