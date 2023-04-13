@@ -6,6 +6,9 @@ services:
         restart: always
         build: .
         env_file: .env
+        networks:
+            - internal
+            - traefik-proxy
         environment:
             - PORT=${PORT}
             - NODE_ENV=${NODE_ENV}
