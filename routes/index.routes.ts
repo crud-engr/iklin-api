@@ -5,7 +5,7 @@ const router = Router();
 router.route('').get((req: Request, res: Response) => {
     return res.status(200).json({
         status: 'success',
-        message: 'Welcome to iklin api',
+        message: 'Welcome to iklin service api',
     });
 });
 
