@@ -4,6 +4,7 @@ services:
     app:
         container_name: app
         restart: always
+        image: iklin-test_app
         build: .
         env_file: .env
         networks:
